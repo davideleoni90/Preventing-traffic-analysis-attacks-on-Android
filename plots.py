@@ -3,7 +3,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plti
+import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 
@@ -39,8 +39,32 @@ def process_csv(file_path, data):
 	# get the average size of incoming packets
 	data['Avg In Pack'].append(df.query('ip_dst==@DEVICE_IP')['frame.len'].mean())
 	
-	# get the Total number of packets and append it to the dictionary
-	data['# Tot Packs'].append(df[0].count())
+	# get the average size of outgoing packets
+	data['Avg Out Pack'].append(df.query('ip_src==@DEVICE_IP')['frame.len'].mean())
+	
+	# get the average size of all packets
+	data['Avg All Pack'].append(df['frame.len'].mean())
+
+	# get the total size of incoming packets
+	data['Tot In Size'].append(df.query('ip_dst==@DEVICE_IP')['frame.len'].sum())
+	  
+	# get the total size of outgoing packets
+	data['Tot Out Size'].append(df.query('ip_src==@DEVICE_IP')['frame.len'].sum())
+
+	# get the total size of all packets
+	data['Tot Size'].append(df['frame.len'].sum())
+	
+	# get the number of incoming packets
+	data['Num In Packs'].append(df.query('ip_dst==@DEVICE_IP')['frame.number'].count())
+		
+	# get the number of outgoing packets
+	data['Num Out Packs'].append(df.query('ip_src==@DEVICE_IP')['frame.number'].count())
+		
+	# get the number of all packets
+	data['Num Tot Packs'].append(df['frame.number'].count())	
+
+	# get the duration of the action
+	data['Action Duration'].append(df['_ws.col.Time'].iloc[-1] - df['_ws.col.Time'].iloc[0])
 
 # the dictionary containing aggregated data from all the iterations under the default network. It has:
 
@@ -62,8 +86,6 @@ def process_csv(file_path, data):
 data_default = defaultdict(list)
 
 # an equivalent data structure keeps track of the corrsponding values of the features measured under the Tor network
-
-
 data_tor = defaultdict(list)
 
 # read the two .csv files corresponding to each iteration (one produced under the default network and one produced under the Tor network) and parse them to fill the above dictionaries
@@ -81,15 +103,55 @@ for iteration in range(ITERATIONS):
 	
 	# parse the csv file
 	process_csv(csv_file, data_tor)
+
+# the dictionary with the aggregated values of the features. It has a key for each of the above feature and the corresponding value is a list with two elements:
+# 1- the average value over all the iterations of the feature under the default network
+# 2- the average value over all the iterations of the feature under the Tor network
+
+aggregated_data = defaultdict(list)
+
+# create a DataFrame out of the dictionary with values of the features in order to compute their average values more easily
+default_df = pd.DataFrame(data_default)
+tor_df = pd.DataFrame(data_tor)
+print default_df
+print tor_df
+# the first DataFrame regards features connected to packets' sizes
+indexes = ['Avg In Pack', 'Avg Out Pack', 'Avg All Pack']
+for key in indexes:
 	
-	print data_default
-	print data_tor
+	aggregated_data[key].append(default_df[key].mean())
+	aggregated_data[key].append(tor_df[key].mean())
 
 
+# the DataFrame for the features regarding packets' sizes:
+# -one row for each of the feature
+# -one column for the aggregated value of the feature under the default network, one for the value collected under the Tor network
 
- 
-# the list of the indexes, i.e. the features taken into account
-indexes = ['Avg In Pack', 'Avg Out Pack', 'Avg All Pack', 'Tot In Size', 'Tot Out', 'Tot Size', '# In Packs', '# Out Packs', '# Tot Packs', 'Action Duration']
+df = pd.DataFrame(aggregated_data, index=['Default', 'Tor']).transpose()
 
-# the name of the columns
-cols = ['Default', 'Tor'] 
+# the figure and plot object to draw graphs
+fig, ax = plt.subplots()
+
+# The first graphs regard sizes of packets in the network flow
+
+ax.set_title('Action: ' + SCRIPT.replace("_", " ") + ' Iterations:' + str(ITERATIONS))
+ax.set_ylabel('Size (bytes)')
+df.plot(kind = 'bar', ax = ax, rot = 0)
+fig.savefig(OUT_FOLDER + SCRIPT + "_packets_sizes.pdf", bbox_inches='tight')
+
+
+# the second DataFrame regards features connected to the number of packets
+indexes = ['Tot In Size', 'Tot Out Size', 'Tot Size']
+aggregated_data = defaultdict(list)
+for key in indexes:
+
+        aggregated_data[key].append(default_df[key].mean())
+        aggregated_data[key].append(tor_df[key].mean())
+
+df = pd.DataFrame(aggregated_data, index=['Default', 'Tor']).transpose()
+ax.set_title('Action: ' + SCRIPT.replace("_", " ") + ' Iterations:' + str(ITERATIONS))
+ax.set_ylabel('Number of packets')
+df.plot(kind = 'bar', ax = ax, rot = 0)
+fig.savefig(OUT_FOLDER + SCRIPT + "_packets_numbers.pdf", bbox_inches='tight')
+
+plt.show()
