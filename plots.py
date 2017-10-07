@@ -168,7 +168,7 @@ for key in indexes:
 df = pd.DataFrame(aggregated_data, index=['Default', 'Tor']).transpose()
 fig, ax = plt.subplots()
 ax.set_title('Action: ' + SCRIPT.replace("_", " ") + ' Iterations:' + str(ITERATIONS))
-ax.set_ylabel('Action Duration')
+ax.set_ylabel('Action Duration (seconds)')
 df.plot(kind = 'bar', ax = ax, rot = 0)
 fig.savefig(OUT_FOLDER + SCRIPT + "_duration.pdf", bbox_inches='tight')
 plt.show()
