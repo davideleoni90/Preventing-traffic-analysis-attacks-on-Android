@@ -1,16 +1,16 @@
 #! /bin/bash
 
 # the name of script performing the user action
-SCRIPT="UserActions/twitter_update_home.sh"
+SCRIPT="UserActions/Twitter/twitter_open_contacts.sh"
 
 # the network card used to be sniffed to capture the network traffic
 INTERFACE="ra0"
 
 # the IP of the Android device
-DEVICE_IP="192.168.1.77"
+DEVICE_IP="192.168.1.2"
 
 # the number of iterations of the benchmarker
-ITERATIONS=2
+ITERATIONS=1
 
 function set_Tor_proxy() {
 	

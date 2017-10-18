@@ -8,7 +8,7 @@ from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 
 # the name of the script used to simulate the user action
-SCRIPT = str(sys.argv[1]).split("/")[1][:-3]
+SCRIPT = str(sys.argv[1]).split("/")[2][:-3]
 
 # the number of iterations performed by the benchmarker
 ITERATIONS = int(sys.argv[2])
