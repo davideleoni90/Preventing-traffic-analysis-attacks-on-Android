@@ -21,6 +21,14 @@ DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Twitter/${FILENAME%.*}"
 
+function getRandomString() {
+	chars=abcd1234ABCD
+	for i in {1..8} ; do
+    		echo -n ${chars:RANDOM%${#chars}:1}
+	done
+	echo
+}
+
 # if the second parameter passed to the script is 0 the default network is being used, while if it's 1 the Tor network is being used: in this case add a suffix to the the .pcap and .csv files produced in order to distinguish the between the different configurations
 
 if [ "$1" == 1 ]
@@ -92,12 +100,30 @@ START_TIME=$(date -u '+%s.%N')
 
 # USER ACTION STARTED
 
-# open the lateral menu
-adb shell input tap 125 204 1>/dev/null
+# click on the button in the bottom right corner of the screen to write a new tweet
+adb shell input tap 1250 2400 1>/dev/null
 sleep 1.5
 
-# click on the "Following" label
-adb shell input tap 300 700 1>/dev/null
+# click on the text field to start writing the tweet
+adb shell input tap 300 500 1>/dev/null
+sleep 1.5
+
+# create the tweet
+random_string=$(getRandomString)
+echo "$random_string"
+
+# write the tweet
+if [ "$1" == 0 ]
+then
+adb shell input text $(echo "Seminar project trial:${random_string}" | sed -e 's/ /\%s/g')
+else
+adb shell input text $(echo "Seminar project trial tor:${random_string}" | sed -e 's/ /\%s/g')
+fi
+sleep 1.5
+
+# publish the tweet
+adb shell input tap 1230 2450 1>/dev/null
+sleep 1.5
 
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
@@ -110,16 +136,12 @@ kill "$TSHARK_PID"
 if [ "$1" == 1 ]
 then
 
-	# first go back to the Home
-	adb shell input keyevent 4
-	sleep 1.5
-	
 	#then open the lateral menu
 	adb shell input tap 125 204 1>/dev/null
 	sleep 1.5
 
 	# then select "Settings and Privacy" (suppress warning messages)
-	adb shell input tap 600 2100 1>/dev/null
+	adb shell input tap 600 1900 1>/dev/null
 	sleep 1.5
 
 	# then select the "Location and Proxy" (suppress warning messages)
@@ -136,8 +158,11 @@ then
 
 	# exit the menu
 	adb shell input keyevent 4
+	sleep 0.5
         adb shell input keyevent 4
+	sleep 0.5
         adb shell input keyevent 4
+	sleep 0.5
 fi
 
 # stop the app

@@ -1,19 +1,20 @@
 #! /bin/bash
 
 # the name of script performing the user action
-SCRIPT="UserActions/Twitter/twitter_open_contacts.sh"
+SCRIPT="UserActions/Twitter/twitter_post_tweet.sh"
 
 # the network card used to be sniffed to capture the network traffic
 INTERFACE="ra0"
 
 # the IP of the Android device
-DEVICE_IP="192.168.1.2"
+DEVICE_IP="192.168.1.5"
 
 # the number of iterations of the benchmarker
-ITERATIONS=1
+ITERATIONS=2
 
 function set_Tor_proxy() {
-	
+
+        echo "Setting Tor Proxy...."	
 	# open the Orbot app
 	adb shell am start "org.torproject.android/.OrbotMainActivity"
 
@@ -32,6 +33,7 @@ function set_Tor_proxy() {
 
 function clear_Tor_proxy() {
 	
+        echo "Clearing Tor Proxy...."	
 	# stop the Orbot app to stop the Onion proxy
 	adb shell am force-stop "org.torproject.android"
 
