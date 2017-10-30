@@ -1,0 +1,2 @@
+_ws.col.Time	frame.number	ip.src	ip.dst	tcp.srcport	tcp.dstport	frame.len	_ws.col.Protocol	_ws.col.Absolute time
+0.000000000	1	192.168.1.5	46.105.63.44	39114	9001	74	TCP	16:21:05.368656000
