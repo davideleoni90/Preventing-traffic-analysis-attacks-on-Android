@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TIMEOUT=5
+TIMEOUT=7
 PACKETS_TIME_MAX_DELTA=4.5
 
 # name of this script
@@ -16,7 +16,7 @@ INTERFACE="$3"
 DEVICE_IP="$4"
 
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Twitter/${FILENAME%.*}"
@@ -41,36 +41,6 @@ adb shell am start "com.twitter.android/com.twitter.app.main.MainActivity"
 
 # wait for it to get loaded
 sleep 2
-
-# in case the Tor Network is to be used, set the proxy in the app
-if [ "$1" == 1 ]
-then
-
-	#first open the lateral menu
-	adb shell input tap 125 204 1>/dev/null
-	sleep 1.5
-	
-	# then select "Settings and Privacy" (suppress warning messages)
-	adb shell input tap 600 1900 1>/dev/null
-	sleep 1.5
-
-	# then select the "Location and Proxy" (suppress warning messages)
-	adb shell input tap 600 2400 1>/dev/null
-	sleep 1.5
-
-	# then select "Proxy"
-	adb shell input tap 600 750 1>/dev/null
-	sleep 1.5
-
-	# and finally check the option "Enable HTTP Proxy" (PREREQUISITE: the proxy has to be already configured)
-	adb shell input tap 600 450 1>/dev/null
-	sleep 1.5
-
-	# exit the menu
-	adb shell input keyevent 4
-	adb shell input keyevent 4
-	adb shell input keyevent 4
-fi
 
 # go to the Home (suppress warning messages)
 adb shell input tap 184 400 1>/dev/null
@@ -102,48 +72,13 @@ adb shell input tap 300 700 1>/dev/null
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
 
+# USER ACTION FINISHED
+
 # stop capturing
 kill "$TSHARK_PID"
 
-# if the Tor network was used, reset the proxy configuration
-
-if [ "$1" == 1 ]
-then
-
-	# first go back to the Home
-	adb shell input keyevent 4
-	sleep 1.5
-	
-	#then open the lateral menu
-	adb shell input tap 125 204 1>/dev/null
-	sleep 1.5
-
-	# then select "Settings and Privacy" (suppress warning messages)
-	adb shell input tap 600 2100 1>/dev/null
-	sleep 1.5
-
-	# then select the "Location and Proxy" (suppress warning messages)
-	adb shell input tap 600 2400 1>/dev/null
-	sleep 1.5
-
-	# then select "Proxy"
-	adb shell input tap 600 750 1>/dev/null
-	sleep 1.5
-	
-	# and finally uncheck the option "Enable HTTP Proxy" (PREREQUISITE: the proxy has to be already configured)
-	adb shell input tap 600 450 1>/dev/null
-	sleep 1.5
-
-	# exit the menu
-	adb shell input keyevent 4
-        adb shell input keyevent 4
-        adb shell input keyevent 4
-fi
-
 # stop the app
 adb shell am force-stop "com.twitter.android"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 
