@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TIMEOUT=5
+TIMEOUT=10
 PACKETS_TIME_MAX_DELTA=4.5
 
 # name of this script
@@ -16,7 +16,7 @@ INTERFACE="$3"
 DEVICE_IP="$4"
 
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Evernote/${FILENAME%.*}"
@@ -34,7 +34,7 @@ OUTPUT_PCAP="${OUTPUT_PCAP}_${ITERATION}"
 # the output csv has same name as the trace file
 OUTPUT_CSV="${OUTPUT_PCAP}.csv"
 
-# start capturing; suppress statistics (with "-l") as well as messages to standard output and error
+# start capturing; suppress statistics (with "-l") as well as messages to standard output and 
 tshark -i "${INTERFACE}" -l -q -n -f "${CAPTURE_FILTER}" -w "${OUTPUT_PCAP}.pcap" > /dev/null 2>&1 &
 
 # get the pid of the background process: this is needed to stop it as soon as the user action has finished
@@ -64,13 +64,13 @@ adb shell input tap 900 1000 1>/dev/null
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
 
+# USER ACTION FINISHED
+
 # stop capturing
 kill "$TSHARK_PID"
 
 # stop the app
 adb shell am force-stop "com.evernote"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TIMEOUT=5
+TIMEOUT=10
 PACKETS_TIME_MAX_DELTA=4.5
 
 # name of this script
@@ -15,25 +15,11 @@ INTERFACE="$3"
 # the IP address of the Android device
 DEVICE_IP="$4"
 
-# the title of the note
-TITLE="Seminar distributed systems"
-
-# the content of the note
-CONTENT="This a note for the seminar"
-
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Evernote/${FILENAME%.*}"
-
-function getRandomString() {
-        chars=abcd1234ABCD
-        for i in {1..8} ; do
-                echo -n ${chars:RANDOM%${#chars}:1}
-        done
-        echo
-}
 
 # if the second parameter passed to the script is 0 the default network is being used, while if it's 1 the Tor network is being used: in this case add a suffix to the the .pcap and .csv files produced in order to distinguish the between the different configurations
 
@@ -68,60 +54,28 @@ START_TIME=$(date -u '+%s.%N')
 adb shell am start "com.evernote/.ui.HomeActivity"
 sleep 3
 
-# click on the icon in the bottom right corner to create a new object
-adb shell input tap 1250 2350 1>/dev/null
+# select the most recent note (long press)
+adb shell input swipe 400 600 400 600 2000 1>/dev/null
+sleep 3
+
+# click on the trash icon to delete the note 
+adb shell input tap 1170 200 1>/dev/null
 sleep 1.5
 
-# select the "Text Note" option 
-adb shell input tap 1250 2350 1>/dev/null
-sleep 1.5
-
-# the focus is on the content of the note: insert the content
-if [ "$1" == 0 ]
-then
-	adb shell input text $(echo "${CONTENT}:" | sed -e 's/ /\%s/g')
-else
-	adb shell input text $(echo "${CONTENT} Tor:" | sed -e 's/ /\%s/g')
-fi
-sleep 1.5
-
-# also append a random string
-random_string=$(getRandomString)
-adb shell input text $(echo " ${random_string}" | sed -e 's/ /\%s/g')
-sleep 1.5
-
-# set the focus on the "Note Title"
-adb shell input tap 200 350 1>/dev/null
-sleep 1.5
-
-# insert the title of the note
-if [ "$1" == 0 ]
-then
-	adb shell input text $(echo "${TITLE}:" | sed -e 's/ /\%s/g')
-else
-	adb shell input text $(echo "${TITLE} Tor:" | sed -e 's/ /\%s/g')
-fi
-sleep 1.5
-
-# also append a random string
-random_string=$(getRandomString)
-adb shell input text $(echo " ${random_string}" | sed -e 's/ /\%s/g')
-sleep 1.5
-
-# save the note clicking on the "tick" in the top left corner
-adb shell input tap 120 200 1>/dev/null
+# press "OK" in the following confirmation message
+adb shell input tap 1165 1540 1>/dev/null
 sleep 1.5
 
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
+
+# USER ACTION FINISHED
 
 # stop capturing
 kill "$TSHARK_PID"
 
 # stop the app
 adb shell am force-stop "com.evernote"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 

@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 
+# the app that produced the user action
+APP = str(sys.argv[1]).split("/")[1]
+
 # the name of the script used to simulate the user action
 SCRIPT = str(sys.argv[1]).split("/")[2][:-3]
 
@@ -17,11 +20,11 @@ ITERATIONS = int(sys.argv[2])
 DEVICE_IP = str(sys.argv[3])
 
 # the path to the folder containing the .csv files containing the network traffic captured (the path is relative to the python script)
-IN_FOLDER = "Traces/"
+IN_FOLDER = "Traces/" + APP + "/"
 
 # the path to folder where the plots have to be stored (the path is relative to the python script, which is the same as the benchmarker)
 
-OUT_FOLDER = "Plots/"
+OUT_FOLDER = "Plots/" + APP + "/"
 
 # this function extracts the value of the features during a single iteration of the script:
 # @file_path: the path to the csv file being parsed
@@ -67,8 +70,10 @@ def process_csv(file_path, data):
 	data['Num Unique Sizes'].append(df['frame.len'].unique().size)
 
 	# get the duration of the action
-	data['Action Duration'].append(df['_ws.col.Time'].iloc[-1] - df['_ws.col.Time'].iloc[0])
-
+	if df['_ws.col.Time'].count() > 0:
+		data['Action Duration'].append(df['_ws.col.Time'].iloc[-1] - df['_ws.col.Time'].iloc[0])
+	else:
+		data['Action Duration'].append(0)
 # the dictionary containing aggregated data from all the iterations under the default network. It has:
 
 # - one key for each feature of the network flow
@@ -171,4 +176,4 @@ ax.set_title('Action: ' + SCRIPT.replace("_", " ") + ' Iterations:' + str(ITERAT
 ax.set_ylabel('Action Duration (seconds)')
 df.plot(kind = 'bar', ax = ax, rot = 0)
 fig.savefig(OUT_FOLDER + SCRIPT + "_duration.pdf", bbox_inches='tight')
-plt.show()
+#plt.show()
