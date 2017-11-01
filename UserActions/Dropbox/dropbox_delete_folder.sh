@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TIMEOUT=5
+TIMEOUT=10
 PACKETS_TIME_MAX_DELTA=4.5
 
 # name of this script
@@ -19,7 +19,7 @@ DEVICE_IP="$4"
 NAME="sds_folder_example"
 
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Dropbox/${FILENAME%.*}"
@@ -62,8 +62,8 @@ adb shell input tap 1000 200 1>/dev/null
 sleep 1.5
 
 # insert the name of the folder to be deleted
-adb shell input text $(echo "${NAME}:" | sed -e 's/ /\%s/g')
-sleep 1.5
+adb shell input text $(echo "${NAME}" | sed -e 's/ /\%s/g')
+sleep 3
 
 # select the first result of the search
 adb shell input tap 1350 650 1>/dev/null
@@ -80,13 +80,13 @@ sleep 1.5
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
 
+# USER ACTION FINISHED
+
 # stop capturing
 kill "$TSHARK_PID"
 
 # stop the app
 adb shell am force-stop "com.dropbox.android"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-TIMEOUT=5
+TIMEOUT=10
 PACKETS_TIME_MAX_DELTA=4.5
 
 # name of this script
@@ -19,13 +19,13 @@ DEVICE_IP="$4"
 NAME="sds_folder_example"
 
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Dropbox/${FILENAME%.*}"
 
 function getRandomString() {
-        chars=abcdefghijklmnopqrstuvwxyz123567894ABCD
+        chars=abcd1234ABjklmnopqrstuvwxyzCDEFGHIJKLMNOPQRSTUVWXYZ
         for i in {1..8} ; do
                 echo -n ${chars:RANDOM%${#chars}:1}
         done
@@ -63,7 +63,7 @@ START_TIME=$(date -u '+%s.%N')
 
 # start Dropbox Main Activity and wait that it's loaded
 adb shell am start "com.dropbox.android/.activity.DropboxBrowser"
-sleep 3
+sleep 7
 
 # click on the button in the bottom right corner
 adb shell input tap 1250 2350 1>/dev/null
@@ -93,13 +93,13 @@ adb shell input tap 1165 1555 1>/dev/null
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
 
+# USER ACTION FINISHED
+
 # stop capturing
 kill "$TSHARK_PID"
 
 # stop the app
 adb shell am force-stop "com.dropbox.android"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 
