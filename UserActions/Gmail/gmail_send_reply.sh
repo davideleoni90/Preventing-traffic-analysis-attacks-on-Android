@@ -16,13 +16,20 @@ INTERFACE="$3"
 DEVICE_IP="$4"
 
 CAPTURE_FILTER="host ${DEVICE_IP}"
-DISPLAY_FILTER="not arp and not bjnp and not dns and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
+
+# we can't exclude the Google IPs here, because Gmail relies on them; of course that's not the case when we use Tor
+if [ "$1" == 1 ]
+then
+	DISPLAY_FILTER="tcp and not bjnp and not ntp and not(ip.src==216.58.192.0/19 or ip.dst==216.58.192.0/19) and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)" 
+else
+	DISPLAY_FILTER="tcp and not bjnp and not ntp and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission and not(tcp.len==0)"
+fi
 
 # the output pcap has the same name as the script
 OUTPUT_PCAP="Traces/Gmail/${FILENAME%.*}"
 
 function getRandomString() {
-        chars=abcdefghijklmnopqrstuvwxyz123567894ABCD
+        chars=abcdefghijklmnopqrstuvwxyz123567894ABCDEFGHIJKLMNOPQRSTUVWXYZ
         for i in {1..8} ; do
                 echo -n ${chars:RANDOM%${#chars}:1}
         done
@@ -88,13 +95,13 @@ sleep 1.5
 # capture for TIMEOUT seconds
 sleep $TIMEOUT
 
+# USER ACTION FINISHED
+
 # stop capturing
 kill "$TSHARK_PID"
 
 # stop the app
 adb shell am force-stop "com.google.android.gm"
-
-# USER ACTION FINISHED
 
 # COLLECT TRACE -> get a CSV out of the trace
 
