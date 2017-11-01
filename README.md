@@ -12,7 +12,7 @@ Project for the Seminar in Distributed Systems at La Sapienza University of Rome
 </ol>
 <p>The classification is based on the computation of the <i>distance</i> between the sequences of packets: the lower is the distance, the more similar are the two sequences and the more likely is that they come from the same web page. There are various possible definitions for this distance, but they are all ultimately based on the evaluation of some <i>features</i> characterising the network traces, like the number of unique packets lengths.</p>
 
-### Tor and Orbot
+### Tor
 
 <p align="justify"><i>Anonymity systems</i> are overlay networks aimed at anonymizing TCP-based applications, namely avoiding that an attacker can determine the application's communication partner. Tor is an example of <i>low-latency, distributed-trust, circuit-based</i> anonymity system. Like any other low-latency anononymity system, Tor is designed to anonymize interactive applications. Within the Tor network, client applications create medium-term circuits and direct traffic through them in fixed-size cells; circuits are establshed using public-key cryptography, while the transmission of cells requires simmetric-key encryption. Since there are various servers that relay cells along the circuit, each communicating only with its adjacent servers, none of them is able to determine whom the client application at one extreme of the circuit is communicating with. Tor builds up the circuit in stages, extending it one hop at a time, composing public-key encrypted messages in other to achieve perfect forward secrecy. To prevent attackers from running too many servers within the network, Tor relies on a set of <i>directory servers</i> that decide which nodes can join the network. Despite of this countermeasures, Tor has been shown ([1]) to be vulnerable to website fingerprinting attacks. Orbot is the official version of Tor for Android: an open-source free app that leverages Tor to anonymize the network traffic produced by other apps on Android (and Apple) devices. The only requirement for an app to be anonymized is that it includes the option of using a proxy to access the Internet: in fact Orbot sets a local server proxy to connect to the Tor network</p>
 
@@ -40,9 +40,28 @@ Project for the Seminar in Distributed Systems at La Sapienza University of Rome
 The above framework was tested on six popular Android applications (Gmail, Twitter, Tumblr, Dropbox, Google+ and Evernote) and it achieves very high level of accuracy in the classification of the user actions; in particular, the authors report that the values of the <i>F-measure</i> are above 90% with almost all the configurations, thus confirming that traffic analysis attacks can be very harmful.  
 </p>
 
+### Orbot
+
+<p align="justify">Orbot bring the functionalities of Tor to the Android operating system: it's an open-source free app that leverages Tor to anonymize the network traffic produced by other apps on Android devices. Orbot has three interfaces:</p>
+<ol>
+  <li>SOCKS proxy running on port 9050</li>
+  <li>HTTP proxy running on port 8118</li>
+  <li>Transparent proxying</li>
+</ol>
+<p align="justify">The first two interfaces are available for any application that is "proxy-aware", namely capable of connecting to a proxy server. Such applications sometimes offer the user the option of explicitely setting the address and port of the server with whom they have to communicate; in alternative, they check if a proxy has been set for the whole device by the user and, if this is the case, they connect to it.
+<br>
+The third interface can be used to transparently "torrify" all the TCP traffic produced by the device, even by non-proxy-aware applications. Orbot is able to achieve this exploiting some kernel-level functionalities, so the following two conditions must hold to make it possible:</p>
+<ol>
+  <li>the user has root priviliges</li>
+  <li>the kernel of the Android operating system running on the device was compiled with the complete <i>netfilter</i> support. This is a component of the Linux kernel in charge of the mangling and manipulation of the IP packets sent and received by the device. The user can tell the kernel how the packets should be processed by mean of a set of rules stored in some tables: for each incoming and outgoing packet, the operating first checks if it matches any of the rules in these tables in order to decide how to handle it. <i>iptables</i> is the front-end of netfilter allowing the manipulation of the rules</li>
+</ol>
+<p align="justify">The transparent proxying is implemented using iptables to create some rules that force all the TCP traffic through the proxy server.
+</p>
+
+
 ### Goal of the project
 
-<p align="justify">All the traffic analysis attacks ultimately rely on the evaluation of some "features": as a matter of fact, the machine learning algorithms adopted manage to classify a network trace by comparing the values of its features with the values of the features of some previously seen training traces. As a consequence, the goal of this project consists in investigating whether an anonimity system can help preventing, or at least mitigating, traffic analysis attacks against Android devices modyfing the values of the features of the network traces produced by the applications in such way to fool the detection techniques applied by the attackers.      
+<p align="justify">All the traffic analysis attacks ultimately rely on the evaluation of some "features": as a matter of fact, the machine learning algorithms adopted by the attackers manage to classify a network trace by comparing the values of its features with the values of the features of some previously seen training traces. As a consequence, the goal of this project consists in investigating whether an anonimity system can help preventing, or at least mitigating, traffic analysis attacks against Android devices through the alteration of the values of the features of the network traces produced by the applications in such way to fool the detection techniques applied by the attackers.      
 
 ## Implementation
 
@@ -58,7 +77,8 @@ The above framework was tested on six popular Android applications (Gmail, Twitt
 
 ### Simulation of the user actions
 
-<p align="justifY">The first step of each study is the generation, or the collection, of the data to be studied: in this case they are represented by the network traces produced by a user when he/she interacts with some mobile applications. In order to guarantee that the user actions are always performed in the same way, the framework simulates them in an automated way through the <i>ADB (Android Debug Bridge)</i>. This is a tool to interact with an Android device (emulated or a real one) by mean of a command-line interface. It can be used to install/unistall applications on the device, move files to/from it, control it using the embedded shell, manage the packets installed and many other things. The embedded sheel features <i>input</i>, a command to simulate the interaction of the user with the device, like a double tap on the screen: exploiting this command, the framework manages to trigger  the user actions on the Android devices.</p>
+<p align="justifY">The first step of each study is the generation, or the collection, of the data to be studied: in this case they are represented by the network traces produced by a user when he/she interacts with some mobile applications. In order to guarantee that the user actions are always performed in the same way, the framework simulates them in an automated way through the <i>ADB (Android Debug Bridge)</i>. This is a tool to interact with an Android device (emulated or a real one) by mean of a command-line interface. It can be used to install/unistall applications on the device, move files to/from it, control it using the embedded shell, manage the packets installed and many other things. The embedded shell features <i>input</i>, a command to simulate the interaction of the user with the device, like a double tap on the screen or the press of a button: thanks to this command, the framework manages to trigger the user actions on the Android devices. For each application analysed there's a script specific for the simulation of each user action.
+</p> 
 
 
 ### Collection of the network traces
@@ -66,35 +86,90 @@ The above framework was tested on six popular Android applications (Gmail, Twitt
 <p align="justify">In order to check how effective is the protection offered by Orbot against traffic analysis attacks, the network packets produced by the applications are captured, just like a passive attacker would do, first in the case where no defense is adopted and then in the case where the anonimity system is enabled on the device. In the proposed framework a dedicated bash script relies on the tool <i>tshark</i> to sniff the traffic generated by the Android device. Tshark is the command-line version of Wireshark, the well-known network protocol analyzer, so it allows to intercept the packets and then extract, for each protocol, the values of the related fields. Tshark comes with a set of <i>capture filters</i> and <i>display filters</i>: the former can be used to sniff a subset of all the packets travelling around the monitored subnetwork, while the latter can be used to show only a portion of the packets from the trace, after they have already been intercepted. Both the filters are used by the script to obtain the network traces necessary for the study:</p>
 <ol>
   <li>a capture filter is applied to the source and the destination IP addresses of the packets in order to collect only the packets to and from the monitored device</li> 
-  <li>some display filters are applied to mimic the work done by the preprocessor in [2] to clean the "noise" from the trace</li> 
+  <li>some display filters are applied to clean the "noise" from the trace, as done by the preprocessor in [2]. The filters try to remove from the trace all the packets that are not related to the user actions, like the traffic produced by the Google services </li> 
 </ol>
 
 ### Plotting of the graphs
 
-<p align="justify">Once all the data have been gathered, a script draws some plots to represent the values of the features assigned to the network traces generated by the user actions: thanks to the graphs it gets easier to check whether some features change when the Android device is protected by an anonimity system.</p>
+<p align="justify">As soon as all the data have been gathered, a script draws some plots to represent the values of the features assigned to the network traces generated by the user actions: thanks to the graphs it gets easier to check whether some features change when the Android device is protected by an anonimity system.</p>
 
 ## Usage
 
 <p align="justify">The main component of the framework is the script <i>bencharmker.sh</i>. It is meant to be run on the host that eavedrops the traffic generated by the Android device (they have to belong to the same subnetwork), after having set a few parameters:</p>
 <ol>
-  <li>the ID of the network card used to sniff the packets</li> 
+  <li>the ID of the network card used to sniff the packets</li>
   <li>the IP address assigned to the Android device to be monitored</li>
-  <li>the path to the python script to be used: indeed, each action of each application is simulated by a dedicated script (in the folder <i>UserActions</i>)</li>
-  <li>the number of times the user action has to be repeated before computing the average values of the features</li> 
+  <li>the name of the application to be analysed (there has to be a corresponding folder under <i>UserActions</i> containing the scripts to simulate the user actions)</li>
+  <li>the number of times the user actions have to be repeated before computing the average values of the features</li> 
 </ol>
-<p align="justify">During each iteration, the benchmarker collects two network traces induced by a user action, one in the default settings and the other after having set the Orbot proxy, and places them in the <i>Traces</i> folder. The traces are then processd, applying some filters, and the remaining packets lists are written to a .cvs file in the same folder. After all the iterations have been completed, the resulting graphs can be found in the <i>Plots</i> folder.</p>
+<p align="justify">During each iteration, the benchmarker simulates one after the other all the user actions related to an application; for each user action it collects two network traces, one using the default network settings and the other after having set the Orbot proxy, and places them in the <i>Traces</i> folder. The traces (files with the <i>.pcap</i> extension) are then processed, applying some filters, and the resulting packets lists is written to a <i>.cvs</i> file in the same folder. After all the iterations have been completed, the resulting graphs can be found in the <i>Plots</i> folder.</p>
 
-## Results (TO BE CONTINUED)
+## Tests
 
-<p align="justify">Results obtained so far have not been achieved using a real Android device, but using the <i>Genymotion Android Emulator</i> and setting its network to the <i>Bridge mode</i> so that it was possible to filter the traffic to/from the virtual device using its IP address.</p>
+### Apps and user actions
+
+<p align="justify">Considering the goal of the project, I used the proposed framework to evaluate the effectiveness of the anonymization provided by Orbot against the attack described in [2]: in particular I evaluated how the values of the features associated to some of the apps and user actions considered in [2] changed when the Tor network was used. Here follows the list of apps and user actions. The applications are some of the most popular and also some of them deal with private data of the users, so the confirmation of their security and privacy properties is crucial. All the user actions taken into account trigger some functionalities whose implementation depend on back-end services, so they leave some network traces behind.</p>
+
+### Twitter
+
+<ul>
+  <li>open the application</li>
+  <li>update the timeline</li>
+  <li>send a private message to contact</li>
+  <li>post a tweet</li>
+</ul>
+
+### Evernote
+
+<ul>
+  <li>open the application and synchronize</li>
+  <li>send a private message to contact</li>
+  <li>create a textual note</li>
+  <li>remove a textual note</li>
+  <li>edit a textual note</li>
+</ul>
+
+### Dropbox
+
+<ul>
+  <li>open the application and synchronize</li>
+  <li>create a folder</li>
+  <li>create a textual file</li>
+  <li>remove a folder</li>
+  <li>remove a textual note</li>
+</ul>
+
+### Gmail
+
+<ul>
+  <li>synchronize to check for incoming emails</li>
+  <li>send an email</li>
+  <li>send a reply</li>
+  <li>tap on the reply button</li>
+  <li>tap on the forward button</li>
+</ul>
+
+### Facebook
+
+<ul>
+  <li>open the application</li>
+  <li>open the user's wall</li>
+  <li>open a friend's wall</li>
+  <li>write a post on the user's wall</li>
+  <li>write a post on a friend's wall</li>
+</ul>
+
+### Device
+
+<p align="justify">The tests were performed using the <i>Genymotion Android Emulator</i> and setting its network to the <i>Bridge mode</i> so that it was possible to filter the traffic to/from the virtual device using its IP address. The emulated device was a <i>Samsung Galaxy S7</i>, running version 6.0 of the Android operating system. The operating system didn't support the iptables configuration, so it was not possible to use the transparent proxying option of Orbot, but only its HTTP proxy. Moreover the automatic synchronization was disabled for all the installed applications in order to avoid that the collection of network traces was hindered by spurious packets not related to the applications monitored.</p>
 
 ## References
 
 <ul>
   <li><a href="https://www.usenix.org/node/184464">Effective Attacks and Provable Defenses for Website Fingerprinting</a> [Tao Wang, University of Waterloo; Xiang Cai, Rishab Nithyanand, and Rob Johnson, Stony Brook University; Ian Goldberg, University of Waterloo]</li>
-  <li><a href="https://svn.torproject.org/svn/projects/design-paper/tor-design.pdf">Tor: The Second-Generation Onion Router</a> [Roger Dingledine and Nick Mathewson, The Free Haven Project; Paul Syverson, Naval Research Lab]</li>
   <li><a href="ieeexplore.ieee.org/document/7265055">Analyzing Android Encrypted Network
 Traffic to Identify User Actions</a> [Mauro Conti and Riccardo Spolaor, Dipartimento di Matematica, Università di Padova; Luigi Vincenzo Mancini, Dipartimento di Informatica, Sapienza Università di Roma]</li>
+  <li><a href="https://svn.torproject.org/svn/projects/design-paper/tor-design.pdf">Tor: The Second-Generation Onion Router</a> [Roger Dingledine and Nick Mathewson, The Free Haven Project; Paul Syverson, Naval Research Lab]</li>
   <li><a href="https://guardianproject.info/apps/orbot/">Orbot: Tor for Android</a></li>
   <li><a href="https://developer.android.com/studio/command-line/adb.html">Android Debug Bridge (adb)</a></li>
   <li><a href="https://www.wireshark.org/docs/man-pages/tshark.html">Tshark</a></li>
