@@ -28,7 +28,7 @@ OUT_FOLDER = "Plots/" + APP + "/"
 
 # this function extracts the value of the features during a single iteration of the script:
 # @file_path: the path to the csv file being parsed
-# @is_tor: boolean value set to True in case the csv was produced under the Tor network
+# @data: the structure where the extracted data have to be put
 
 def process_csv(file_path, data):
 	global DEVICE_IP
@@ -67,13 +67,19 @@ def process_csv(file_path, data):
 	data['Num Tot Packs'].append(df['frame.number'].count())
 
 	# get the number of packets with unique size	
-	data['Num Unique Sizes'].append(df['frame.len'].unique().size)
+	_, counters = np.unique(df['frame.len'], return_counts=True)
+	unique_lengths = 0
+	for count in counters:
+		if count == 1:
+			unique_lengths += 1
+	data['Num Unique Sizes'].append(unique_lengths)
 
 	# get the duration of the action
 	if df['_ws.col.Time'].count() > 0:
 		data['Action Duration'].append(df['_ws.col.Time'].iloc[-1] - df['_ws.col.Time'].iloc[0])
 	else:
 		data['Action Duration'].append(0)
+
 # the dictionary containing aggregated data from all the iterations under the default network. It has:
 
 # - one key for each feature of the network flow
