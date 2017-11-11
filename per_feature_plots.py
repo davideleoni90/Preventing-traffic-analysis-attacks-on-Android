@@ -17,8 +17,8 @@ DEVICE_IP =  {'Dropbox': '192.168.1.5', 'Gmail': '192.168.1.5', 'Evernote': '192
 # the colors for the bars representing each app
 COLORS = {'Dropbox': ('crimson', 'coral'), 'Gmail': ('gray', 'darkgray'), 'Evernote': ('darkgreen', 'lime'), 'Facebook': ('darkblue', 'mediumslateblue'), 'Twitter': ('saddlebrown', 'peru')}
 
-# the list of the features considered
-FEATURES = {'Avg In Pack': 'Average Size of Incoming Packets' , 'Avg Out Pack': 'Average Size of Outgoing Packets', 'Avg All Pack': 'Average Size of All Packets', 'Tot In Size': 'Total Size of Incoming Packets', 'Tot Out Size': 'Total Size of Outgoing Packets', 'Tot Size': 'Total Size of All Packets', 'Num In Packs': 'Number of Incoming Packets', 'Num Out Packs': 'Number of Outgoing Packets', 'Num Tot Packs': 'Number of Packets', 'Num Unique Sizes': 'Number of Packets with Unique length', 'Action Duration': 'Duration of the action'}
+# the list of the features considered: for each feature we provide the title and the label of the y-axis of the related graph
+FEATURES = {'Avg In Pack': ['Average Size of Incoming Packets', 'Size (bytes)'], 'Avg Out Pack': ['Average Size of Outgoing Packets', 'Size (bytes)'], 'Avg All Pack': ['Average Size of All Packets', 'Size (bytes)'], 'Tot In Size': ['Total Size of Incoming Packets', 'Size (bytes)'], 'Tot Out Size': ['Total Size of Outgoing Packets', 'Size (bytes)'], 'Tot Size': ['Total Size of All Packets', 'Size (bytes)'], 'Num In Packs': ['Number of Incoming Packets', 'Number of packets'], 'Num Out Packs': ['Number of Outgoing Packets', 'Number of packets'], 'Num Tot Packs': ['Number of Packets', 'Number of packets'], 'Num Unique Sizes': ['Number of Packets with Unique length', 'Number of packets'], 'Action Duration': ['Duration of the action', 'Duration (seconds)']}
 
 # the path to the folder containing the bash scripts simulating the user actions (the path is relative to the python script)
 SCRIPTS_FOLDER = "UserActions/"
@@ -211,14 +211,14 @@ for feature in FEATURES:
 		data_frames.append(plot_graphs_app(app, feature))
 		axes[i].set_title(app)
 		if i == 0:
-			axes[i].set_ylabel('Size (bytes)')
+			axes[i].set_ylabel(FEATURES[feature][1])
 		data_frames[i].plot(kind = 'bar', ax = axes[i], rot = 90, color = COLORS[app], legend = False)
 		patch = mpatches.Patch(color= COLORS[app][0], label = app + "_default")
 		patch_tor = mpatches.Patch(color= COLORS[app][1], label = app + "_tor")
 		legends.append(patch)
 		legends.append(patch_tor)
 		i += 1
-	plt.suptitle(FEATURES[feature])
+	plt.suptitle(FEATURES[feature][0])
 	plt.legend(handles = legends, loc='center left', bbox_to_anchor=(1, 0.5))
 	split_feature_name = feature.split(" ")
 	filename = ""
